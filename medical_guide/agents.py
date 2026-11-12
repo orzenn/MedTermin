@@ -5,7 +5,7 @@ import copy
 import json
 import re
 import time
-from concurrent.futures import ThreadPoolExecutor
+from difflib import get_close_matches
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -13,7 +13,8 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .core import (SourceError, extract_summary, matches_document, normalize, parse_medline_xml,
-                   plain_text, split_sentences, validate_query, verify_result)
+                   validate_query, verify_result)
+from .translation import Translator
 
 
 def timestamp() -> str:
@@ -38,27 +39,31 @@ class HttpClient:
 class GuideService:
     def __init__(self, data_dir: Path, client: HttpClient | None = None):
         self.client = client or HttpClient()
+        self.translator = Translator(self.client)
         self.topics = json.loads((data_dir / "topics.json").read_text(encoding="utf-8"))
         self.mesh_snapshots = json.loads((data_dir / "mesh.json").read_text(encoding="utf-8"))
         self.dataset = json.loads((data_dir / "medline.json").read_text(encoding="utf-8"))
         self.aliases = {normalize(alias): topic for topic in self.topics for alias in topic["aliases"]}
         self.ru_terms = {normalize(term): english for term, english in
                          json.loads((data_dir / "ru_terms.json").read_text(encoding="utf-8")).items()}
-        corpus_terms = {normalize(label) for doc in self.dataset for label in
-                        [doc["title"], *doc.get("synonyms", []), *doc.get("mesh", [])]}
-        if any(normalize(english) not in corpus_terms for english in self.ru_terms.values()):
+        self.vocabulary = {}
+        for doc in self.dataset:
+            for label in [doc["title"], *doc.get("synonyms", []), *doc.get("mesh", [])]:
+                self.vocabulary.setdefault(normalize(label), label)
+        if any(normalize(english) not in self.vocabulary for english in self.ru_terms.values()):
             raise ValueError("A Russian term mapping does not match the source vocabulary.")
 
     def translate(self, text: str, languages: str) -> str:
-        if len(text.encode("utf-8")) > 490:
-            raise SourceError("Фрагмент слишком большой для перевода.")
-        data = self.client.json("https://api.mymemory.translated.net/get?" + urlencode({"q": text, "langpair": languages}))
-        value = data.get("responseData", {}).get("translatedText", "")
-        if str(data.get("responseStatus")) != "200" or not value or re.search(r"MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID LANGUAGE", value, re.I):
-            raise SourceError("Перевод временно недоступен.")
-        return plain_text(value)
+        return self.translator.translate_fragment(text, languages)
 
-    def planning_agent(self, query: str, online: bool) -> dict:
+    def planning_agent(self, query: str, online: bool, selected_english: str | None = None) -> dict:
+        if selected_english:
+            english = self.vocabulary.get(normalize(selected_english))
+            if not english:
+                raise SourceError("Выбранный перевод не найден в словаре источника.")
+            topic = self.aliases.get(normalize(english))
+            return {"english": english, "title": topic["title"] if topic else query, "topic": topic,
+                    "translation": "Английское понятие подтверждено пользователем"}
         topic = self.aliases.get(normalize(query))
         if topic:
             return {"english": topic["english"], "title": topic["title"], "topic": topic,
@@ -72,12 +77,30 @@ class GuideService:
         if not online:
             raise SourceError("Для нового русского термина включите онлайн-поиск или введите английское название.")
         try:
-            english = self.translate(query, "ru|en")
+            candidates = self.translator.query_candidates(query)
         except Exception as exc:
             raise SourceError("Не удалось перевести запрос. Попробуйте английское название или один из примеров.") from exc
-        if re.search(r"[а-яё]", english, re.I):
-            raise SourceError("Не удалось получить английское название. Уточните термин или введите его на английском.")
-        return {"english": english, "title": query, "topic": None, "translation": "Машинный перевод MyMemory"}
+        matched = list(dict.fromkeys(self.vocabulary[normalize(term)] for term in candidates if normalize(term) in self.vocabulary))
+        if len(matched) > 1:
+            return {"translation_candidates": [{"english": term} for term in matched[:5]], "translatedQuery": candidates[0],
+                    "reason": "Найдено несколько вариантов перевода в словаре источника."}
+        if matched:
+            english = matched[0]
+            return {"english": english, "title": query, "topic": self.aliases.get(normalize(english)),
+                    "translation": "MyMemory: английское название найдено в словаре источника"}
+        suggestions = []
+        for candidate in candidates[:3]:
+            if len(candidate) < 5:
+                continue
+            for key in get_close_matches(normalize(candidate), self.vocabulary, n=3, cutoff=0.86):
+                term = self.vocabulary[key]
+                if term not in suggestions:
+                    suggestions.append(term)
+        if suggestions:
+            return {"translation_candidates": [{"english": term} for term in suggestions[:5]], "translatedQuery": candidates[0],
+                    "reason": "Точный перевод не подтверждён. Найдены похожие названия; приложение не выбирает их автоматически."}
+        return {"english": candidates[0], "title": query, "topic": None,
+                "translation": "MyMemory: название не подтверждено локальным словарём; выполняется поиск в MeSH"}
 
     @staticmethod
     def _rdf_value(value) -> str:
@@ -161,21 +184,21 @@ class GuideService:
             raise SourceError("В найденном материале недостаточно текста для краткой справки.")
         if online:
             try:
-                chunks = split_sentences(original)[:4]
-                if any(len(s.encode("utf-8")) > 490 for s in chunks):
-                    raise SourceError("Длинное предложение для перевода.")
-                with ThreadPoolExecutor(max_workers=4) as executor:
-                    translated = list(executor.map(lambda s: self.translate(s, "en|ru"), chunks))
-                if not all(re.search(r"[а-яё]", s, re.I) for s in translated):
-                    raise SourceError("Неверный язык перевода.")
-                return {"text": " ".join(translated), "original": original, "language": "ru", "facts": [],
-                        "mode": "Извлечение предложений + машинный перевод MyMemory"}
+                pairs = self.translator.translate_source(original)
+                return {"text": " ".join(pair["translated"] for pair in pairs), "original": original,
+                        "language": "ru", "facts": [], "translationPairs": pairs,
+                        "mode": "Извлечение предложений + MyMemory с проверкой чисел"}
+            except SourceError as exc:
+                note = str(exc)
             except Exception:
-                pass
+                note = "Сервис перевода временно недоступен. Показан английский оригинал."
+        else:
+            note = "Перевод отключён в режиме без сети."
         return {"text": original, "original": original, "language": "en", "facts": [],
-                "mode": "Исходный английский фрагмент: перевод отключён или недоступен"}
+                "translationNote": note, "mode": "Исходный английский фрагмент: перевод отключён или недоступен"}
 
     def search(self, query: str, *, online: bool = True, selected_id: str | None = None,
+               selected_english: str | None = None,
                on_event: Callable[[dict], None] | None = None) -> dict:
         query = validate_query(query)
         if selected_id and not re.fullmatch(r"D\d{6,9}", selected_id):
@@ -196,10 +219,13 @@ class GuideService:
             emit(event)
             return value
 
-        plan = step("plan", "Понимание запроса", lambda: self.planning_agent(query, online))
+        plan = step("plan", "Понимание запроса", lambda: self.planning_agent(query, online, selected_english))
+        if "translation_candidates" in plan:
+            return {"type": "translation_choices", "choices": plan["translation_candidates"], "query": query,
+                    "translatedQuery": plan["translatedQuery"], "reason": plan["reason"], "trace": trace}
         mesh = step("mesh", "Поиск понятия в MeSH", lambda: self.mesh_agent(plan, online, selected_id))
         if "candidates" in mesh:
-            return {"type": "choices", "choices": mesh["candidates"], "query": query, "trace": trace}
+            return {"type": "choices", "choices": mesh["candidates"], "query": query, "trace": trace, "selectedEnglish": selected_english}
         if selected_id and mesh.get("id"):
             topic = next((t for t in self.topics if normalize(t["english"]) == normalize(mesh["label"])), None)
             plan = {**plan, "english": mesh["label"], "title": topic["title"] if topic else mesh["label"], "topic": topic}

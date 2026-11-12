@@ -1,7 +1,9 @@
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
+from medical_guide.agents import GuideService
 
 APP = Path(__file__).resolve().parents[1] / "app.py"
 
@@ -64,6 +66,26 @@ class StreamlitTests(unittest.TestCase):
         result = self.app.session_state["result"]
         self.assertEqual(result["english"], "Scoliosis")
         self.assertEqual(result["medline"]["url"], "https://medlineplus.gov/scoliosis.html")
+
+    def test_translation_choice_is_shown_and_confirmed_before_search(self):
+        original = GuideService.planning_agent
+
+        def planning(service, query, online, selected_english=None):
+            if selected_english:
+                return original(service, query, online, selected_english)
+            return {"translation_candidates": [{"english": "Scoliosis"}], "translatedQuery": "Skoliosis",
+                    "reason": "Точный перевод не подтверждён."}
+
+        with patch.object(GuideService, "planning_agent", planning):
+            self.app.checkbox(key="online").uncheck().run()
+            self.app.text_input(key="query").set_value("тестовый термин")
+            self.app.button(key="FormSubmitter:search_form-Объяснить ↗").click().run()
+            self.assert_no_errors()
+            self.assertEqual(self.app.session_state["result"]["type"], "translation_choices")
+            self.app.button(key="translation_choice_0").click().run()
+            self.assert_no_errors()
+            self.assertEqual(self.app.session_state["result"]["type"], "result")
+            self.assertEqual(self.app.session_state["result"]["english"], "Scoliosis")
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ def load_service(data_version: tuple[int, ...]) -> GuideService:
 
 
 service = load_service(tuple((ROOT / path).stat().st_mtime_ns for path in (
-    "data/topics.json", "data/mesh.json", "data/medline.json", "data/ru_terms.json", "medical_guide/agents.py",
+    "data/topics.json", "data/mesh.json", "data/medline.json", "data/ru_terms.json", "medical_guide/agents.py", "medical_guide/translation.py",
 )))
 for key, value in {"saved": {}, "history": [], "result": None, "query": "", "navigation": "Справочник", "error": None}.items():
     if key not in st.session_state:
@@ -85,7 +85,7 @@ def source_caption(source: dict) -> None:
     st.caption(labels.get(provenance, "Не подтверждено") + suffix)
 
 
-def run_search(query: str, selected_id: str | None = None) -> None:
+def run_search(query: str, selected_id: str | None = None, selected_english: str | None = None) -> None:
     st.session_state["result"] = None
     st.session_state["error"] = None
     with st.status("Собираем объяснение…", expanded=True) as status:
@@ -99,7 +99,8 @@ def run_search(query: str, selected_id: str | None = None) -> None:
             lines[event["key"]].write(f"{symbol} {event['name']}{duration}")
 
         try:
-            outcome = service.search(query, online=st.session_state["online"], selected_id=selected_id, on_event=on_event)
+            outcome = service.search(query, online=st.session_state["online"], selected_id=selected_id,
+                                     selected_english=selected_english, on_event=on_event)
             st.session_state["result"] = outcome
             if outcome["type"] == "result":
                 st.session_state["history"] = [outcome] + [r for r in st.session_state["history"] if result_key(r) != result_key(outcome)]
@@ -117,12 +118,21 @@ def run_search(query: str, selected_id: str | None = None) -> None:
 
 
 def render_result(result: dict) -> None:
+    if result["type"] == "translation_choices":
+        st.subheader("Уточните перевод термина")
+        st.write(result["reason"])
+        st.caption("Переводчик предложил: " + result["translatedQuery"] + ". Сходство написания не означает одинаковое медицинское значение.")
+        for index, choice in enumerate(result["choices"]):
+            if st.button(choice["english"], key=f"translation_choice_{index}", width="stretch"):
+                run_search(result["query"], selected_english=choice["english"])
+                st.rerun()
+        return
     if result["type"] == "choices":
         st.subheader("Уточните понятие")
         st.write("В MeSH найдено несколько совпадений. Выберите нужное значение.")
         for choice in result["choices"]:
             if st.button(f"{choice['label']} · {choice['id']}", key="choice_" + choice["id"], width="stretch"):
-                run_search(result["query"], choice["id"])
+                run_search(result["query"], choice["id"], selected_english=result.get("selectedEnglish"))
                 st.rerun()
         return
     if result["type"] == "related":
@@ -146,7 +156,7 @@ def render_result(result: dict) -> None:
     with explanation:
         st.write(result["text"])
         if result["language"] != "ru":
-            st.warning("Перевод отключён или временно недоступен. Показан исходный английский фрагмент.")
+            st.warning(result.get("translationNote", "Перевод отключён или временно недоступен. Показан исходный английский фрагмент."))
         source_caption(result["medline"])
         if safe_medline_url(result["medline"]["url"]):
             st.link_button("Открыть материал MedlinePlus ↗", result["medline"]["url"])
@@ -157,6 +167,14 @@ def render_result(result: dict) -> None:
         label = "Сохранённый пересказ на английском" if result["medline"]["provenance"] == "snapshot" else "Исходный английский фрагмент"
         with st.expander(label):
             st.text(result["original"])
+        if result.get("translationPairs"):
+            with st.expander("Сопоставить перевод с оригиналом"):
+                for index, pair in enumerate(result["translationPairs"], 1):
+                    st.caption(f"Фрагмент {index}")
+                    left, right = st.columns(2)
+                    left.write(pair["original"])
+                    right.write(pair["translated"])
+                st.caption("Совпадение чисел проверено программно. Смысл и медицинская точность перевода требуют отдельной оценки.")
         notes = {
             "live": "Использован материал, полученный в текущем запросе.",
             "snapshot": "Показана подготовленная справка по сохранённому материалу. Это не текущий ответ MedlinePlus.",
@@ -261,7 +279,7 @@ def render_about() -> None:
             st.markdown(f"**{index:02d} · {name}**")
             st.write(text)
     st.subheader("Прозрачность и ограничения")
-    st.write("В этой версии агенты работают по заданным правилам. Генеративная языковая модель не подключена. Перевод новых фрагментов выполняет внешний сервис MyMemory; при его недоступности сохраняется английский текст.")
+    st.write("В этой версии агенты работают по заданным правилам. Генеративная языковая модель не подключена. Варианты перевода MyMemory сопоставляются со словарём источника; похожие и неоднозначные названия предлагаются на выбор. В переводе справок проверяется сохранение чисел, а проверенные фрагменты кешируются. Эти проверки не гарантируют правильность медицинского смысла.")
     st.write(f"Локальная база содержит {len(service.dataset)} англоязычных тем MedlinePlus из официальной выгрузки от 11.11.2026. Её дата и происхождение указаны в ответе. Подготовлены {len(service.topics)} русских примеров и проверенные записи MeSH.")
     st.caption("Источник материалов: MedlinePlus, National Library of Medicine. Русские объяснения не являются официальным переводом NLM.")
     for label, url in [("Документация MeSH", "https://id.nlm.nih.gov/mesh/"), ("Документация MedlinePlus", "https://medlineplus.gov/about/developers/webservices/"), ("Официальные выгрузки MedlinePlus", "https://medlineplus.gov/xml.html"), ("Условия использования MedlinePlus", "https://medlineplus.gov/about/using/usingcontent/")]:
