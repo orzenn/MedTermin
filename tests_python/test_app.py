@@ -56,6 +56,15 @@ class StreamlitTests(unittest.TestCase):
         self.assertEqual(self.app.session_state["result"]["medline"]["provenance"], "dataset")
         self.assertEqual(self.app.session_state["result"]["language"], "en")
 
+    def test_russian_scoliosis_search_reaches_the_source(self):
+        self.app.checkbox(key="online").uncheck().run()
+        self.app.text_input(key="query").set_value("сколиоз")
+        self.app.button(key="FormSubmitter:search_form-Объяснить ↗").click().run()
+        self.assert_no_errors()
+        result = self.app.session_state["result"]
+        self.assertEqual(result["english"], "Scoliosis")
+        self.assertEqual(result["medline"]["url"], "https://medlineplus.gov/scoliosis.html")
+
 
 if __name__ == "__main__":
     unittest.main()

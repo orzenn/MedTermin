@@ -33,11 +33,13 @@ st.html("""
 
 
 @st.cache_resource
-def load_service() -> GuideService:
+def load_service(data_version: tuple[int, ...]) -> GuideService:
     return GuideService(ROOT / "data")
 
 
-service = load_service()
+service = load_service(tuple((ROOT / path).stat().st_mtime_ns for path in (
+    "data/topics.json", "data/mesh.json", "data/medline.json", "data/ru_terms.json", "medical_guide/agents.py",
+)))
 for key, value in {"saved": {}, "history": [], "result": None, "query": "", "navigation": "Справочник", "error": None}.items():
     if key not in st.session_state:
         st.session_state[key] = value

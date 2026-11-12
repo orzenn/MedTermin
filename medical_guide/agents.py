@@ -42,6 +42,12 @@ class GuideService:
         self.mesh_snapshots = json.loads((data_dir / "mesh.json").read_text(encoding="utf-8"))
         self.dataset = json.loads((data_dir / "medline.json").read_text(encoding="utf-8"))
         self.aliases = {normalize(alias): topic for topic in self.topics for alias in topic["aliases"]}
+        self.ru_terms = {normalize(term): english for term, english in
+                         json.loads((data_dir / "ru_terms.json").read_text(encoding="utf-8")).items()}
+        corpus_terms = {normalize(label) for doc in self.dataset for label in
+                        [doc["title"], *doc.get("synonyms", []), *doc.get("mesh", [])]}
+        if any(normalize(english) not in corpus_terms for english in self.ru_terms.values()):
+            raise ValueError("A Russian term mapping does not match the source vocabulary.")
 
     def translate(self, text: str, languages: str) -> str:
         if len(text.encode("utf-8")) > 490:
@@ -57,6 +63,10 @@ class GuideService:
         if topic:
             return {"english": topic["english"], "title": topic["title"], "topic": topic,
                     "translation": "Проверенный словарь соответствий"}
+        english = self.ru_terms.get(normalize(query))
+        if english:
+            return {"english": english, "title": query, "topic": None,
+                    "translation": "Словарь русских терминов: название сопоставлено со словарём источника"}
         if not re.search(r"[а-яё]", query, re.I):
             return {"english": query, "title": query, "topic": None, "translation": "Запрос на английском"}
         if not online:

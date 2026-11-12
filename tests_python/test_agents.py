@@ -87,6 +87,28 @@ class AgentTests(unittest.TestCase):
         self.assertFalse(result["verification"]["checks"][2]["ok"])
         self.assertEqual(len(self.service.dataset), 1017)
 
+    def test_scoliosis_russian_and_english_resolve_to_the_same_source_without_translation(self):
+        english = self.service.search("scoliosis", online=False)
+        for query in ("сколиоз", "  СКОЛИОЗ  ", "сколиоз позвоночника"):
+            with self.subTest(query=query):
+                russian = self.service.search(query, online=False)
+                self.assertEqual(russian["english"], "Scoliosis")
+                self.assertEqual(russian["medline"]["url"], english["medline"]["url"])
+                self.assertEqual(russian["medline"]["provenance"], "dataset")
+                self.assertIn("Словарь русских терминов", russian["translation"])
+        self.assertEqual(self.client.calls, [])
+
+    def test_scoliosis_does_not_use_incorrect_transliteration_from_translation_service(self):
+        class TransliterationClient(OfflineClient):
+            def json(self, url, timeout=6):
+                if "mymemory" in url:
+                    raise AssertionError("Known Russian query must bypass unreliable translation")
+                return super().json(url, timeout)
+
+        service = GuideService(DATA, TransliterationClient())
+        plan = service.planning_agent("сколиоз", online=True)
+        self.assertEqual(plan["english"], "Scoliosis")
+
     def test_unknown_queries_are_not_replaced_with_a_prepared_answer(self):
         for query in ("unknown-disease-xyz", "анемия при беременности"):
             with self.subTest(query=query), self.assertRaises(SourceError):
