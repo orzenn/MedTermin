@@ -1,0 +1,56 @@
+{
+  "D001249": {
+    "id": "D001249",
+    "label": "Asthma",
+    "definition": "A form of bronchial disorder with three distinct components: airway hyper-responsiveness (RESPIRATORY HYPERSENSITIVITY), airway INFLAMMATION, and intermittent AIRWAY OBSTRUCTION. It is characterized by spasmodic contraction of airway smooth muscle, WHEEZING, and dyspnea (DYSPNEA, PAROXYSMAL).",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D001249",
+    "source": "https://id.nlm.nih.gov/mesh/D001249.json",
+    "checkedAt": "2026-11-12T09:39:34.980Z"
+  },
+  "D003924": {
+    "id": "D003924",
+    "label": "Diabetes Mellitus, Type 2",
+    "definition": "A subclass of DIABETES MELLITUS that is not INSULIN-responsive or dependent (NIDDM). It is characterized initially by INSULIN RESISTANCE and HYPERINSULINEMIA; and eventually by GLUCOSE INTOLERANCE; HYPERGLYCEMIA; and overt diabetes. Type II diabetes mellitus is no longer considered a disease exclusively found in adults. Patients seldom develop KETOSIS but often exhibit OBESITY.",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D003924",
+    "source": "https://id.nlm.nih.gov/mesh/D003924.json",
+    "checkedAt": "2026-11-12T09:39:33.973Z"
+  },
+  "D008881": {
+    "id": "D008881",
+    "label": "Migraine Disorders",
+    "definition": "A class of disabling primary headache disorders, characterized by recurrent unilateral pulsatile headaches. The two major subtypes are common migraine (without aura) and classic migraine (with aura or neurological symptoms). (International Classification of Headache Disorders, 2nd ed. Cephalalgia 2004: suppl 1)",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D008881",
+    "source": "https://id.nlm.nih.gov/mesh/D008881.json",
+    "checkedAt": "2026-11-12T09:39:34.584Z"
+  },
+  "D011014": {
+    "id": "D011014",
+    "label": "Pneumonia",
+    "definition": "Infection of the lung often accompanied by inflammation.",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D011014",
+    "source": "https://id.nlm.nih.gov/mesh/D011014.json",
+    "checkedAt": "2026-11-12T09:39:34.986Z"
+  },
+  "D000740": {
+    "id": "D000740",
+    "label": "Anemia",
+    "definition": "A reduction in the number of circulating ERYTHROCYTES or in the quantity of HEMOGLOBIN.",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D000740",
+    "source": "https://id.nlm.nih.gov/mesh/D000740.json",
+    "checkedAt": "2026-11-12T09:39:35.184Z"
+  },
+  "D006973": {
+    "id": "D006973",
+    "label": "Hypertension",
+    "definition": "Persistently high systemic arterial BLOOD PRESSURE. Based on multiple readings (BLOOD PRESSURE DETERMINATION), hypertension is currently defined as when SYSTOLIC PRESSURE is consistently greater than 140 mm Hg or when DIASTOLIC PRESSURE is consistently 90 mm Hg or more.",
+    "synonyms": [],
+    "url": "https://id.nlm.nih.gov/mesh/D006973",
+    "source": "https://id.nlm.nih.gov/mesh/D006973.json",
+    "checkedAt": "2026-11-12T09:39:38.669Z"
+  }
+}

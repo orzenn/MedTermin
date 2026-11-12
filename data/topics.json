@@ -1,0 +1,50 @@
+[
+  {
+    "key": "asthma", "title": "Бронхиальная астма", "english": "Asthma", "meshId": "D001249",
+    "aliases": ["астма", "бронхиальная астма", "asthma", "bronchial asthma"],
+    "category": "Органы дыхания", "url": "https://medlineplus.gov/asthma.html", "checkedAt": "2026-11-12",
+    "summaryEn": "Asthma is a long-term disease affecting the airways. Inflammation and narrowing of the airways can cause coughing, wheezing and chest tightness. Symptoms may become worse during an attack. Triggers differ between people.",
+    "summaryRu": "Астма — хроническое заболевание дыхательных путей. При астме они могут воспаляться и сужаться. Это может вызывать кашель, свистящее дыхание и чувство стеснения в груди. Во время приступа симптомы усиливаются. Факторы, вызывающие обострение, у разных людей различаются.",
+    "factsRu": ["Затрагивает дыхательные пути.", "Проявления и провоцирующие факторы могут различаться.", "В справке описано понятие, а не состояние конкретного человека."]
+  },
+  {
+    "key": "hypertension", "title": "Артериальная гипертензия", "english": "Hypertension",
+    "aliases": ["гипертензия", "артериальная гипертензия", "гипертония", "повышенное давление", "hypertension", "high blood pressure"],
+    "category": "Сердце и сосуды", "url": "https://medlineplus.gov/highbloodpressure.html", "checkedAt": "2026-11-12",
+    "summaryEn": "Blood pressure describes the force of blood against artery walls. High blood pressure often has no symptoms. Blood pressure measurements are needed to identify it. A diagnosis involves repeated readings assessed by a health professional.",
+    "summaryRu": "Артериальное давление — сила, с которой кровь давит на стенки артерий. При гипертензии оно повышено. Повышенное давление часто не вызывает заметных симптомов, поэтому его выявляют измерениями. Для постановки диагноза специалист оценивает повторные измерения.",
+    "factsRu": ["Отсутствие симптомов не исключает повышенное давление.", "Для оценки нужны измерения.", "Единичное значение и медицинский диагноз — разные вещи."]
+  },
+  {
+    "key": "diabetes", "title": "Сахарный диабет 2 типа", "english": "Diabetes Mellitus, Type 2",
+    "aliases": ["диабет 2 типа", "сахарный диабет 2 типа", "диабет второго типа", "type 2 diabetes", "diabetes mellitus, type 2"],
+    "category": "Обмен веществ", "url": "https://medlineplus.gov/diabetestype2.html", "checkedAt": "2026-11-12",
+    "summaryEn": "Type 2 diabetes involves high blood glucose. Insulin normally helps glucose enter cells. In type 2 diabetes the body does not use insulin effectively or does not produce enough of it. High glucose over time can lead to health problems.",
+    "summaryRu": "При сахарном диабете 2 типа уровень глюкозы в крови повышен. В норме гормон инсулин помогает глюкозе попасть в клетки. При этом заболевании организм недостаточно эффективно использует инсулин или вырабатывает его в недостаточном количестве. Длительное повышение глюкозы может приводить к проблемам со здоровьем.",
+    "factsRu": ["Глюкоза служит источником энергии для клеток.", "Инсулин помогает глюкозе поступать в клетки.", "Диабет 2 типа связан с нарушением действия или выработки инсулина."]
+  },
+  {
+    "key": "anemia", "title": "Анемия", "english": "Anemia",
+    "aliases": ["анемия", "малокровие", "anemia", "anaemia"],
+    "category": "Кровь", "url": "https://medlineplus.gov/anemia.html", "checkedAt": "2026-11-12",
+    "summaryEn": "With anemia the blood carries too little oxygen to the body. Causes include blood loss, reduced production or increased destruction of red blood cells. Iron deficiency is a common cause, but not the only one. Diagnosis involves examination and blood tests.",
+    "summaryRu": "При анемии кровь переносит недостаточно кислорода к тканям. Причиной могут быть кровопотеря, недостаточное образование эритроцитов или их усиленное разрушение. Дефицит железа — распространённая, но не единственная причина. Для установления причины нужны обследование и анализы крови.",
+    "factsRu": ["Анемия может иметь разные причины.", "Она не всегда связана только с нехваткой железа.", "Причину устанавливают по результатам обследования."]
+  },
+  {
+    "key": "migraine", "title": "Мигрень", "english": "Migraine Disorders",
+    "aliases": ["мигрень", "migraine", "migraine disorders"],
+    "category": "Нервная система", "url": "https://medlineplus.gov/migraine.html", "checkedAt": "2026-11-12",
+    "summaryEn": "Migraine involves recurring headaches with moderate or severe throbbing pain, often on one side. Nausea and sensitivity to light or sound may occur. Triggers vary between people. Not every headache is a migraine.",
+    "summaryRu": "Мигрень сопровождается повторяющимися приступами головной боли. Боль может быть умеренной или сильной, пульсирующей и часто односторонней. Возможны тошнота и повышенная чувствительность к свету или звуку. Провоцирующие факторы у разных людей различаются. Не всякая головная боль является мигренью.",
+    "factsRu": ["Приступы могут повторяться.", "Возможна чувствительность к свету и звуку.", "Название симптома само по себе не устанавливает диагноз."]
+  },
+  {
+    "key": "pneumonia", "title": "Пневмония", "english": "Pneumonia",
+    "aliases": ["пневмония", "воспаление легких", "воспаление лёгких", "pneumonia", "bronchopneumonia"],
+    "category": "Органы дыхания", "url": "https://medlineplus.gov/pneumonia.html", "checkedAt": "2026-11-12",
+    "summaryEn": "Pneumonia is an infection affecting one or both lungs. Air sacs may fill with fluid or pus. Bacteria, viruses or fungi can cause it. Its severity depends on the cause, age and general health.",
+    "summaryRu": "Пневмония — инфекция одного или обоих лёгких. Воздушные мешочки лёгких могут заполняться жидкостью или гноем. Причиной могут быть бактерии, вирусы или грибки. Тяжесть заболевания зависит от возбудителя, возраста и общего состояния здоровья.",
+    "factsRu": ["Инфекция может затрагивать одно или оба лёгких.", "У пневмонии бывают разные возбудители.", "Тяжесть различается у разных людей."]
+  }
+]
