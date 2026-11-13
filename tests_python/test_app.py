@@ -4,6 +4,7 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 from medical_guide.agents import GuideService
+from medical_guide.runtime import get_service
 
 APP = Path(__file__).resolve().parents[1] / "app.py"
 
@@ -68,7 +69,8 @@ class StreamlitTests(unittest.TestCase):
         self.assertEqual(result["medline"]["url"], "https://medlineplus.gov/scoliosis.html")
 
     def test_translation_choice_is_shown_and_confirmed_before_search(self):
-        original = GuideService.planning_agent
+        service_class = type(get_service(APP.parent / "data"))
+        original = service_class.planning_agent
 
         def planning(service, query, online, selected_english=None):
             if selected_english:
@@ -76,7 +78,7 @@ class StreamlitTests(unittest.TestCase):
             return {"translation_candidates": [{"english": "Scoliosis"}], "translatedQuery": "Skoliosis",
                     "reason": "Точный перевод не подтверждён."}
 
-        with patch.object(GuideService, "planning_agent", planning):
+        with patch.object(service_class, "planning_agent", planning):
             self.app.checkbox(key="online").uncheck().run()
             self.app.text_input(key="query").set_value("тестовый термин")
             self.app.button(key="FormSubmitter:search_form-Объяснить ↗").click().run()
@@ -86,6 +88,23 @@ class StreamlitTests(unittest.TestCase):
             self.assert_no_errors()
             self.assertEqual(self.app.session_state["result"]["type"], "result")
             self.assertEqual(self.app.session_state["result"]["english"], "Scoliosis")
+
+    def test_all_example_buttons_work_after_a_legacy_cached_service(self):
+        from test_runtime import LegacyService
+        from unittest.mock import Mock
+        current = GuideService(APP.parent / "data")
+        loader = Mock(side_effect=[LegacyService(), current])
+        with patch("medical_guide.runtime.load_cached_service", loader):
+            app = AppTest.from_file(str(APP), default_timeout=20).run()
+        self.assertEqual(len(app.exception), 0)
+        loader.clear.assert_called_once()
+        app.checkbox(key="online").uncheck().run()
+        for key, expected in (("asthma", "Бронхиальная астма"), ("hypertension", "Артериальная гипертензия"),
+                              ("anemia", "Анемия"), ("migraine", "Мигрень")):
+            app.button(key="example_" + key).click().run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertIsNone(app.session_state["error"])
+            self.assertEqual(app.session_state["result"]["title"], expected)
 
 
 if __name__ == "__main__":

@@ -8,8 +8,8 @@ from pathlib import Path
 
 import streamlit as st
 
-from medical_guide.agents import GuideService
 from medical_guide.core import SourceError, export_markdown, safe_medline_url
+from medical_guide.runtime import get_service
 
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title="МедТермин · Streamlit", page_icon="🌿", layout="wide", initial_sidebar_state="auto")
@@ -32,14 +32,7 @@ st.html("""
 """)
 
 
-@st.cache_resource
-def load_service(data_version: tuple[int, ...]) -> GuideService:
-    return GuideService(ROOT / "data")
-
-
-service = load_service(tuple((ROOT / path).stat().st_mtime_ns for path in (
-    "data/topics.json", "data/mesh.json", "data/medline.json", "data/ru_terms.json", "medical_guide/agents.py", "medical_guide/translation.py",
-)))
+service = get_service(ROOT / "data")
 for key, value in {"saved": {}, "history": [], "result": None, "query": "", "navigation": "Справочник", "error": None}.items():
     if key not in st.session_state:
         st.session_state[key] = value
@@ -99,8 +92,10 @@ def run_search(query: str, selected_id: str | None = None, selected_english: str
             lines[event["key"]].write(f"{symbol} {event['name']}{duration}")
 
         try:
-            outcome = service.search(query, online=st.session_state["online"], selected_id=selected_id,
-                                     selected_english=selected_english, on_event=on_event)
+            search_options = {"online": st.session_state["online"], "selected_id": selected_id, "on_event": on_event}
+            if selected_english is not None:
+                search_options["selected_english"] = selected_english
+            outcome = service.search(query, **search_options)
             st.session_state["result"] = outcome
             if outcome["type"] == "result":
                 st.session_state["history"] = [outcome] + [r for r in st.session_state["history"] if result_key(r) != result_key(outcome)]
