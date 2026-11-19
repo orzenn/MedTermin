@@ -283,7 +283,7 @@ def render_about() -> None:
 
 with st.sidebar:
     st.html('<div class="med-brand">МедТермин<span style="color:#8da574">+</span></div>')
-    st.radio("Раздел", ["Справочник", "Сохранённое", "О проекте"], key="navigation", label_visibility="collapsed")
+    st.radio("Раздел", ["Справочник", "Инструменты MCP", "Сохранённое", "О проекте"], key="navigation", label_visibility="collapsed")
     st.divider()
     st.checkbox("Проверять источники онлайн", value=True, key="online", help="Если выключено, сеть не используется. Шесть примеров доступны на русском, остальные материалы из выгрузки — на английском.")
     st.caption("При сбоях источников приложение использует сохранённые материалы и явно отмечает это.")
@@ -294,6 +294,11 @@ with st.sidebar:
 
 if st.session_state.pop("notice", None):
     st.toast("Сохранённое обновлено")
-{"Справочник": render_search, "Сохранённое": render_saved, "О проекте": render_about}[st.session_state["navigation"]]()
-st.info("Справочная информация помогает понять термин. Она не устанавливает диагноз и не заменяет консультацию специалиста.", icon="ℹ️")
+if st.session_state["navigation"] == "Инструменты MCP":
+    from medterm_mcp.ui import render_mcp
+
+    render_mcp()
+else:
+    {"Справочник": render_search, "Сохранённое": render_saved, "О проекте": render_about}[st.session_state["navigation"]]()
+    st.info("Справочная информация помогает понять термин. Она не устанавливает диагноз и не заменяет консультацию специалиста.", icon="ℹ️")
 st.html('<div class="med-footer">МедТермин · Учебный проект, 2026<br>Источник справочных материалов: MedlinePlus, National Library of Medicine.</div>')

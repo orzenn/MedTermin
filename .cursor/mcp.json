@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "medterm-stdio": {
+      "command": "python",
+      "args": ["-m", "medterm_mcp.server"]
+    },
+    "medterm-sse": {
+      "url": "http://127.0.0.1:8000/sse"
+    },
+    "medterm-pubmed": {
+      "url": "https://pubmed.caseyjhand.com/mcp"
+    }
+  }
+}
